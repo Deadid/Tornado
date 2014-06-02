@@ -1,0 +1,247 @@
+
+
+#include <vcl.h>
+#include <math.h>
+#include <time.h>
+#include <stdlib.h>
+#pragma hdrstop
+
+#include "Unit1.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+
+const int PLAYER_RADIUS = 10;
+
+TForm1 *Form1;
+
+int timeLeft;
+int x,y, lastx,lasty;
+int r,cntrx,cntry;
+double alpha, speed;
+int reverseDirection = 1;
+int score = 0;
+int scoreForPoint;
+int fieldWidth, fieldHeight;
+
+int scoreX, scoreY;
+int scoreRadius;
+
+bool isStarted = false;
+LOGFONT lf;
+
+void Update1(void);
+void Draw(void);
+void GameOver();
+void GameStart();
+void CheckLose();
+void PickScore();
+void PlayerMovement();
+void DrawPlayer();
+void DrawScore();
+void GetScore();
+void DrawSummary();
+void EraseScore();
+void CalculateTime();
+double distance (int Ax, int Bx, int Ay, int By);
+
+//---------------------------------------------------------------------------
+__fastcall TForm1::TForm1(TComponent* Owner)
+        : TForm(Owner)
+{
+        fieldWidth = Form1->Width;
+        fieldHeight = Form1->Height;
+        Form1->Canvas->Font->Height = 12;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::frameTimerTimer(TObject *Sender)
+{
+    Update1();
+    Draw();
+}
+//---------------------------------------------------------------------------
+
+
+void Update1(void)
+{
+        PlayerMovement();
+        CalculateTime();
+        CheckLose();
+        PickScore();
+}
+
+void Draw(void)
+{
+    DrawSummary();
+    DrawPlayer();
+}
+
+void GameOver()
+{
+    Form1->frameTimer->Enabled = false;
+    Form1->Canvas->Font->Height = 60;
+    Form1->Canvas->Brush->Color = clBtnFace;
+    Form1->Canvas->TextOutA(216, 216, "You losed with score:");
+    Form1->Canvas->TextOutA(400, 270, score);
+    Form1->Canvas->Font->Height = 12;
+    isStarted = false;
+
+
+}
+void GameStart()
+{
+        Form1->frameTimer->Enabled = true;
+        Form1->Label1->Visible = false;
+        Form1->Canvas->Brush->Color = clBtnFace;
+        Form1->Canvas->FloodFill(0,0, clBtnFace, 1);
+        isStarted = true;
+        r = 50;
+        speed = 0.1;
+        alpha = 0;
+        cntrx = Form1->Width/2;
+        cntry = Form1->Height/2;
+        x = cntrx;
+        y = cntry - 25;
+        score = 0;
+        timeLeft = 10 * 1000;
+        randomize();
+        GetScore();
+}
+
+void CheckLose()
+{
+    if(timeLeft <= 0)
+        GameOver();
+    if((x - PLAYER_RADIUS <= 0)||(x + PLAYER_RADIUS >= fieldWidth - 5))
+        GameOver();
+    if((y - PLAYER_RADIUS <= 0) || (y + PLAYER_RADIUS >= fieldHeight - 30))
+        GameOver();
+}
+
+void PlayerMovement()
+{
+        lastx = x;
+        lasty = y;
+        x = cntrx + floor(r*cos(alpha));
+        y = cntry + floor(r*sin(alpha));
+        alpha += speed * reverseDirection;
+        if (fabs(alpha) >= 2*M_PI)
+                alpha -= 2*M_PI;
+}
+
+void DrawPlayer()
+{
+        Form1->Canvas->Pen->Color=clBtnFace;
+        Form1->Canvas->Brush->Color=clBtnFace;
+        Form1->Canvas->Ellipse(lastx-PLAYER_RADIUS,
+        lasty-PLAYER_RADIUS,
+        lastx+PLAYER_RADIUS,
+        lasty+PLAYER_RADIUS);
+        Form1->Canvas->Pen->Color=clBlack;
+        Form1->Canvas->Brush->Color=clYellow;
+        Form1->Canvas->Ellipse(x - PLAYER_RADIUS,
+        y - PLAYER_RADIUS,
+        x + PLAYER_RADIUS,
+        y + PLAYER_RADIUS);
+}
+
+void PickScore()
+{
+        if(distance(x, scoreX, y, scoreY)
+        <= PLAYER_RADIUS + scoreRadius)
+        {
+                score+= scoreForPoint;
+                timeLeft += (scoreForPoint/10>3) ? scoreForPoint * 100 : 3000;
+                EraseScore();
+                GetScore();
+        }
+}
+
+void GetScore()
+{
+        scoreX = PLAYER_RADIUS + 50 + random(fieldWidth - PLAYER_RADIUS - 50);
+        scoreY = PLAYER_RADIUS + 50 + random(fieldHeight - PLAYER_RADIUS - 50);
+        scoreForPoint = (1 + random(9)) * 10;
+        scoreRadius = PLAYER_RADIUS*2 - scoreForPoint/10;
+
+        if((distance(x, scoreX, y, scoreY) < 150.0 + scoreRadius)||
+        (scoreX + scoreRadius >= fieldWidth - PLAYER_RADIUS*4)||
+        (scoreY + scoreRadius >= fieldHeight  - PLAYER_RADIUS*4)||
+        (scoreX <= scoreRadius + 10 )||
+        (scoreY <= scoreRadius + 10))
+        {
+                GetScore();
+        }
+        else
+                DrawScore();
+}
+
+void DrawScore()
+{
+        Form1->Canvas->Pen->Color=clBlack;
+        Form1->Canvas->Brush->Color=clGreen;
+        Form1->Canvas->Ellipse(scoreX - scoreRadius,
+        scoreY - scoreRadius,
+        scoreX + scoreRadius,
+        scoreY + scoreRadius);
+        Form1->Canvas->TextOut(scoreX - 6, scoreY - 6, scoreForPoint);
+}
+void EraseScore()
+{
+        Form1->Canvas->Pen->Color=clBtnFace;
+        Form1->Canvas->Brush->Color=clBtnFace;
+        Form1->Canvas->Ellipse(scoreX - scoreRadius,
+        scoreY - scoreRadius,
+        scoreX + scoreRadius,
+        scoreY + scoreRadius);
+}
+
+void DrawSummary()
+{
+        Form1->Canvas->Brush->Color = clBtnFace;
+        Form1->Canvas->Pen->Color=clBtnFace;
+        Form1->Canvas->Rectangle(40, 30, 100, 45);
+        Form1->Canvas->Brush->Color = clBtnFace;
+        Form1->Canvas->Pen->Color=clBlack;
+        Form1->Canvas->TextOutA(10, 10, "Score: ");
+        Form1->Canvas->TextOutA(45, 10, score);
+        Form1->Canvas->TextOutA(10, 30, "Time left: ");
+        Form1->Canvas->TextOutA(55, 30, timeLeft / 1000);
+}
+
+void CalculateTime()
+{
+    timeLeft -= (int)(1000/34.0);
+}
+
+
+
+//---------------------------------------------------------------------------
+double distance (int Ax, int Bx, int Ay, int By)
+{
+        return sqrt(pow(Ax - Bx,2) + pow(Ay - By,2));
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::FormKeyUp(TObject *Sender, WORD &Key,
+      TShiftState Shift)
+{
+        if(Key == VK_SPACE)
+        {
+            if(isStarted)
+            {
+                reverseDirection *=(-1) ;
+                cntrx = 2*x - cntrx;
+                cntry = 2*y - cntry;
+                alpha+=M_PI;
+            }
+            else
+            {
+                GameStart();
+            }
+        }
+}
+//---------------------------------------------------------------------------
+
