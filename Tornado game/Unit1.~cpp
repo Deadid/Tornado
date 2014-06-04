@@ -26,11 +26,8 @@ int fieldWidth, fieldHeight;
 
 int scoreX, scoreY;
 int scoreRadius;
-int bonusX, bonusY;
-int bonusType;
 
 bool isStarted = false;
-bool isBonus = false;
 LOGFONT lf;
 
 void Update1(void);
@@ -46,10 +43,6 @@ void GetScore();
 void DrawSummary();
 void EraseScore();
 void CalculateTime();
-void GenerateBonus();
-void DrawBonus();
-void EraseBonus();
-void PickBonus();
 double distance (int Ax, int Bx, int Ay, int By);
 
 //---------------------------------------------------------------------------
@@ -76,8 +69,6 @@ void Update1(void)
         CalculateTime();
         CheckLose();
         PickScore();
-        PickBonus();
-
 }
 
 void Draw(void)
@@ -105,7 +96,6 @@ void GameStart()
         Form1->Canvas->Brush->Color = clBtnFace;
         Form1->Canvas->FloodFill(0,0, clBtnFace, 1);
         isStarted = true;
-        isBonus = false;
         r = 50;
         speed = 0.1;
         alpha = 0;
@@ -165,10 +155,6 @@ void PickScore()
                 timeLeft += (scoreForPoint/10>3) ? scoreForPoint * 100 : 3000;
                 EraseScore();
                 GetScore();
-                if((isBonus == false)&&(random(100) > 50))
-                {
-                        GenerateBonus();
-                }
         }
 }
 
@@ -229,91 +215,7 @@ void CalculateTime()
     timeLeft -= (int)(1000/34.0);
 }
 
-void GenerateBonus()
-{
-                isBonus = true;
-                bonusType = random(4);
-                bonusX = PLAYER_RADIUS + 25 + random(fieldWidth - PLAYER_RADIUS - 50);
-                bonusY = PLAYER_RADIUS + 25 + random(fieldHeight - PLAYER_RADIUS - 50);
-                if((distance(x, bonusX, y, bonusY) < 150)||
-                (distance(scoreX, bonusX, scoreY, bonusY) < 150))
-                {
-                        GenerateBonus();
-                }
-                else
-                {
-                        DrawBonus();
-                }
-}
 
-void DrawBonus()
-{
-        Form1->Canvas->Pen->Color = clBlack;
-        Form1->Canvas->Brush->Color = clRed;
-        Form1->Canvas->Ellipse(bonusX - PLAYER_RADIUS,
-        bonusY - PLAYER_RADIUS,
-        bonusX + PLAYER_RADIUS,
-        bonusY + PLAYER_RADIUS);
-        switch(bonusType)
-        {
-                case 0:
-                Form1->Canvas->TextOut(bonusX - 6, bonusY - 6, "R+");
-                break;
-
-                case 1:
-                Form1->Canvas->TextOut(bonusX - 6, bonusY - 6, "R-");
-                break;
-
-                case 2:
-                Form1->Canvas->TextOut(bonusX - 6, bonusY - 6, "S+");
-                break;
-
-                case 3:
-                Form1->Canvas->TextOut(bonusX - 6, bonusY - 6, "S-");
-                break;
-        }
-}
-
-void EraseBonus()
-{
-        Form1->Canvas->Pen->Color=clBtnFace;
-        Form1->Canvas->Brush->Color=clBtnFace;
-        Form1->Canvas->Ellipse(bonusX - PLAYER_RADIUS,
-        bonusY - PLAYER_RADIUS,
-        bonusX + PLAYER_RADIUS,
-        bonusY + PLAYER_RADIUS);
-}
-
-void PickBonus()
-{
-        if(distance(x, bonusX, y, bonusY)
-        <= PLAYER_RADIUS*2)
-        {
-                switch(bonusType)
-                {
-                        case 0:
-                        if(r<100)
-                                r+=5;
-                        break;
-                        case 1:
-                        if(r>10)
-                                r-=5;
-                        break;
-                        case 2:
-                        if(speed < 0.5)
-                                speed+=0.05;
-                        break;
-                        case 3:
-                        if(speed >0.05)
-                                speed-=0.05;
-                        break;
-                }
-                isBonus = false;
-                EraseBonus();
-                bonusX = 1000000000;
-                bonusY = 1000000000;
-        }
-}
 
 //---------------------------------------------------------------------------
 double distance (int Ax, int Bx, int Ay, int By)

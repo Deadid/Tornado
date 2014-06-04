@@ -235,7 +235,10 @@ void __fastcall TForm1::FormKeyUp(TObject *Sender, WORD &Key,
                 reverseDirection *=(-1) ;
                 cntrx = 2*x - cntrx;
                 cntry = 2*y - cntry;
-                alpha+=M_PI;
+                if(reverseDirection == 1)
+                    alpha+=M_PI + 0.1;
+                else
+                    alpha+=M_PI - 0.1;
             }
             else
             {
